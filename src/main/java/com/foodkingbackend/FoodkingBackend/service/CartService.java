@@ -53,7 +53,7 @@ public class CartService {
 
         if (existingItem.isPresent()) {
 //            update quantity
-            existingItem.get().setQuantity(existingItem.get().getQuantity() + qty);
+            existingItem.get().setQuantity(qty);
 //            foodItem.setQuantity(qty);
 //            existingItem.get().getFoodItem().setQuantity(foodItem.getQuantity() + qty);
         } else {
