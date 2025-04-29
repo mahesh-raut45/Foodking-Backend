@@ -3,9 +3,12 @@ package com.foodkingbackend.FoodkingBackend.service;
 import com.foodkingbackend.FoodkingBackend.entity.FoodItem;
 import com.foodkingbackend.FoodkingBackend.repository.FoodItemRepository;
 import jakarta.annotation.PostConstruct;
+import org.hibernate.StaleObjectStateException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class FoodItemService {
@@ -23,7 +26,24 @@ public class FoodItemService {
 
     //    Bulk insert
     public List<FoodItem> saveAllFoodItems(List<FoodItem> foodItems) {
-        return foodItemRepository.saveAll(foodItems);
+        try {
+            return foodItemRepository.saveAll(foodItems);
+        } catch (ObjectOptimisticLockingFailureException | StaleObjectStateException e) {
+            // Log the error (optional)
+            System.err.println("Optimistic locking error while saving food items: " + e.getMessage());
+
+            // You can return only new items (without IDs), or just skip failed ones
+            List<FoodItem> newItems = foodItems.stream()
+                    .filter(item -> item.getId() == null)
+                    .collect(Collectors.toList());
+
+            // Try saving only the new ones
+            return foodItemRepository.saveAll(newItems);
+        } catch (Exception e) {
+            // Generic catch for other issues
+            System.err.println("General error: " + e.getMessage());
+            throw e; // rethrow or return empty list if you prefer
+        }
     }
 //
 //    //    update an existing food item
