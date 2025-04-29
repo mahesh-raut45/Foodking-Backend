@@ -7,11 +7,9 @@ import com.foodkingbackend.FoodkingBackend.requestAndResponseModels.LoginRequest
 import com.foodkingbackend.FoodkingBackend.requestAndResponseModels.MessageResponse;
 import com.foodkingbackend.FoodkingBackend.requestAndResponseModels.RegisterRequest;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -22,10 +20,9 @@ import java.util.Optional;
 @Controller
 @CrossOrigin
 @RequestMapping("/api/auth")
+@Slf4j
 public class AuthController {
 
-//    @Autowired
-//    AuthenticationManager authenticationManager;
 
     @Autowired
     UserRepository userRepository;
@@ -33,28 +30,28 @@ public class AuthController {
     @Autowired
     PasswordEncoder passwordEncoder;
 
-    @GetMapping("/user")
-    public ResponseEntity<?> getUserDetails(@AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
-        }
-        Optional<User> optionalUser = userRepository.findByUserName(userDetails.getUsername());
-        if (optionalUser.isEmpty()) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found"));
-        }
-
-        User user = optionalUser.get();
-        return ResponseEntity.ok(user);
-    }
+//    @GetMapping("/user")
+//    public ResponseEntity<?> getUserDetails(@AuthenticationPrincipal UserDetails userDetails) {
+//        if (userDetails == null) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+//        }
+//        Optional<User> optionalUser = userRepository.findByUserName(userDetails.getUsername());
+//        if (optionalUser.isEmpty()) {
+//            return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found"));
+//        }
+//
+//        User user = optionalUser.get();
+//        return ResponseEntity.ok(user);
+//    }
 
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest request) {
+
+        log.info("User details received for registrations: {}", request);
         //check if username is already taken
         if (userRepository.existsByUserName(request.getUserName())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Username is already taken"));
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Username is already taken"));
         }
         //check if email is already exists
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -68,23 +65,33 @@ public class AuthController {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setCreatedAt(new Date());
         //save user
-        userRepository.save(user);
-
+        try {
+            userRepository.save(user);
+        } catch (Exception e) {
+            log.error("Error occurred while registering the user:", e);
+        }
+        log.info("User registered successfully!");
         return ResponseEntity.ok(new MessageResponse(("User Registered Successfully")));
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
+        User user;
+        try {
 //        Find user by  username
-        Optional<User> optionalUser = userRepository.findByUserName(loginRequest.getUserName());
-        if (optionalUser.isEmpty()) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found"));
-        }
+            Optional<User> optionalUser = userRepository.findByUserName(loginRequest.getUserName());
+            if (optionalUser.isEmpty()) {
+                return ResponseEntity.badRequest().body(new MessageResponse("Error: User not found"));
+            }
 
-        User user = optionalUser.get();
+            user = optionalUser.get();
 //        password check
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Incorrect password"));
+            if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+                return ResponseEntity.badRequest().body(new MessageResponse("Error: Incorrect password"));
+            }
+        } catch (Exception e) {
+            log.error("Error occurred while login user :", e);
+            throw new RuntimeException(e);
         }
 
 

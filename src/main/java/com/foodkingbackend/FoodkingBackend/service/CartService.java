@@ -9,6 +9,7 @@ import com.foodkingbackend.FoodkingBackend.repository.CartRepository;
 import com.foodkingbackend.FoodkingBackend.repository.FoodItemRepository;
 import com.foodkingbackend.FoodkingBackend.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class CartService {
 
     @Autowired
@@ -30,53 +32,57 @@ public class CartService {
 
     @Transactional
     public Cart addToCart(Long userId, Long foodItemId, int qty) {
+        try {
 //        check if user is present
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User Not Found"));
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User Not Found"));
 //        check if foodItem is present
-        FoodItem foodItem = foodItemRepository.findById(foodItemId)
-                .orElseThrow(() -> new RuntimeException("Food Item Not Found"));
+            FoodItem foodItem = foodItemRepository.findById(foodItemId)
+                    .orElseThrow(() -> new RuntimeException("Food Item Not Found"));
 
 //        check if cart exists
-        Cart cart = cartRepository.findByUserId(userId).orElse(null);
+            Cart cart = cartRepository.findByUserId(userId).orElse(null);
 
 //        if not, create new cart
-        if (cart == null) {
-            cart = new Cart();
-            cart.setUser(user);
-            cart.setItems(new ArrayList<>());
-        }
+            if (cart == null) {
+                cart = new Cart();
+                cart.setUser(user);
+                cart.setItems(new ArrayList<>());
+            }
 
 //        check if item already is cart
-        Optional<CartItem> existingItem = cart.getItems().stream()
-                .filter(item -> item.getFoodItem().getId().equals(foodItemId)).findFirst();
+            Optional<CartItem> existingItem = cart.getItems().stream()
+                    .filter(item -> item.getFoodItem().getId().equals(foodItemId)).findFirst();
 
-        if (existingItem.isPresent()) {
-//            update quantity
-            existingItem.get().setQuantity(qty);
-//            foodItem.setQuantity(qty);
-//            existingItem.get().getFoodItem().setQuantity(foodItem.getQuantity() + qty);
-        } else {
-//          add new item to cart
-            CartItem newItem = new CartItem();
-            newItem.setCart(cart);
-            newItem.setFoodItem(foodItem);
-//            foodItem.setQuantity(foodItem.getQuantity() + qty); // I was changing the original item's qty
-            newItem.setQuantity(qty);
-            cart.getItems().add(newItem);
-        }
+            if (existingItem.isPresent()) {
+    //            update quantity
+                existingItem.get().setQuantity(qty);
+    //            foodItem.setQuantity(qty);
+    //            existingItem.get().getFoodItem().setQuantity(foodItem.getQuantity() + qty);
+            } else {
+    //          add new item to cart
+                CartItem newItem = new CartItem();
+                newItem.setCart(cart);
+                newItem.setFoodItem(foodItem);
+    //            foodItem.setQuantity(foodItem.getQuantity() + qty); // I was changing the original item's qty
+                newItem.setQuantity(qty);
+                cart.getItems().add(newItem);
+            }
 //        update the total
 //        double total = cart.getItems().stream()
 //                .mapToDouble(item -> item.getFoodItem().getPrice() * item.getFoodItem().getQuantity())
 //                .sum();
 //        cart.setTotalAmount(total);
 
-        double total = cart.getItems().stream()
-                .mapToDouble(item -> item.getFoodItem().getPrice() * item.getQuantity())
-                .sum();
-        cart.setTotalAmount(total);
+            double total = cart.getItems().stream()
+                    .mapToDouble(item -> item.getFoodItem().getPrice() * item.getQuantity())
+                    .sum();
+            cart.setTotalAmount(total);
 
-        return cartRepository.save(cart);
+            return cartRepository.save(cart);
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Cart getCartForUser(Long userId) {
