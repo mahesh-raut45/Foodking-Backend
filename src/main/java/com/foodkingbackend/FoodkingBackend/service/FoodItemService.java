@@ -7,6 +7,7 @@ import org.hibernate.StaleObjectStateException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,24 +27,36 @@ public class FoodItemService {
 
     //    Bulk insert
     public List<FoodItem> saveAllFoodItems(List<FoodItem> foodItems) {
-        try {
-            return foodItemRepository.saveAll(foodItems);
-        } catch (ObjectOptimisticLockingFailureException | StaleObjectStateException e) {
-            // Log the error (optional)
-            System.err.println("Optimistic locking error while saving food items: " + e.getMessage());
+        List<FoodItem> savedItems = new ArrayList<>();
 
-            // You can return only new items (without IDs), or just skip failed ones
-            List<FoodItem> newItems = foodItems.stream()
-                    .filter(item -> item.getId() == null)
-                    .collect(Collectors.toList());
+        for (FoodItem item : foodItems) {
+            try {
+                if (item.getId() != null && foodItemRepository.existsById(item.getId())) {
+                    // Fetch the latest version from DB
+                    FoodItem existingItem = foodItemRepository.findById(item.getId()).orElseThrow();
 
-            // Try saving only the new ones
-            return foodItemRepository.saveAll(newItems);
-        } catch (Exception e) {
-            // Generic catch for other issues
-            System.err.println("General error: " + e.getMessage());
-            throw e; // rethrow or return empty list if you prefer
+                    // Update fields manually
+                    existingItem.setName(item.getName());
+                    existingItem.setPrice(item.getPrice());
+                    existingItem.setQuantity(item.getQuantity());
+                    existingItem.setImage(item.getImage());
+                    existingItem.setCaloriesPerServing(item.getCaloriesPerServing());
+                    existingItem.setCuisine(item.getCuisine());
+                    existingItem.setRating(item.getRating());
+                    existingItem.setReviewCount(item.getReviewCount());
+                    existingItem.setMealType(item.getMealType());
+                    existingItem.setTags(item.getTags());
+
+                    savedItems.add(foodItemRepository.save(existingItem));
+                } else {
+                    savedItems.add(foodItemRepository.save(item)); // New item
+                }
+            } catch (Exception e) {
+                System.err.println("Error saving item with ID: " + item.getId() + " - " + e.getMessage());
+            }
         }
+
+        return savedItems;
     }
 //
 //    //    update an existing food item
