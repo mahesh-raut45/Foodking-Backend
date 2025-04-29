@@ -3,6 +3,7 @@ package com.foodkingbackend.FoodkingBackend.service;
 import com.foodkingbackend.FoodkingBackend.entity.FoodItem;
 import com.foodkingbackend.FoodkingBackend.repository.FoodItemRepository;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.StaleObjectStateException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class FoodItemService {
 
     private final FoodItemRepository foodItemRepository;
@@ -34,6 +36,8 @@ public class FoodItemService {
                 if (item.getId() != null && foodItemRepository.existsById(item.getId())) {
                     // Fetch the latest version from DB
                     FoodItem existingItem = foodItemRepository.findById(item.getId()).orElseThrow();
+                    existingItem.getMealType().size(); // Force initialization
+                    existingItem.getTags().size();     // Force initialization
 
                     // Update fields manually
                     existingItem.setName(item.getName());
@@ -52,7 +56,7 @@ public class FoodItemService {
                     savedItems.add(foodItemRepository.save(item)); // New item
                 }
             } catch (Exception e) {
-                System.err.println("Error saving item with ID: " + item.getId() + " - " + e.getMessage());
+                log.error("Error saving item with ID: {}", item.getId(), e);
             }
         }
 
