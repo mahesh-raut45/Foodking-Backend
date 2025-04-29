@@ -4,13 +4,10 @@ import com.foodkingbackend.FoodkingBackend.entity.FoodItem;
 import com.foodkingbackend.FoodkingBackend.repository.FoodItemRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.StaleObjectStateException;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -27,7 +24,20 @@ public class FoodItemService {
         this.foodItemRepository = foodItemRepository;
     }
 
-    //    Bulk insert
+    /**
+     * Saves a list of food items, either updating existing ones or adding new ones.
+     *
+     * This method performs a bulk insert for a list of `FoodItem` objects. For each food item:
+     * - If the item has an ID and already exists in the repository, it is updated with the new values.
+     * - If the item is new (does not exist in the repository), it is saved as a new entry.
+     *
+     * The method ensures the latest data is fetched and updated, and initialization of related entities
+     * (like `mealType` and `tags`) is triggered before saving the updated food item. If an error occurs while
+     * saving an item, it is logged and the process continues for the remaining items.
+     *
+     * @param foodItems The list of `FoodItem` objects to be saved or updated.
+     * @return A list of `FoodItem` objects that have been saved (either new or updated).
+     */
     public List<FoodItem> saveAllFoodItems(List<FoodItem> foodItems) {
         List<FoodItem> savedItems = new ArrayList<>();
 
@@ -80,6 +90,7 @@ public class FoodItemService {
 //                }).orElseThrow(() -> new RuntimeException("Food item not found"));
 //    }
 //
+
     public void addFoodItem(FoodItem foodItem) {
         foodItemRepository.save(foodItem);
     }

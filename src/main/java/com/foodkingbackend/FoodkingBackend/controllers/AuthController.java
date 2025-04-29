@@ -45,6 +45,18 @@ public class AuthController {
 //    }
 
 
+    /**
+     * Handles user registration by validating and saving new user details.
+     *
+     * This method receives a registration request, checks if the username or email already exists
+     * in the system, and if not, creates a new user with the provided details. The password is securely
+     * encoded before storing. In case of errors during saving, an exception is logged. Returns an appropriate
+     * response based on success or validation failure.
+     *
+     * @param request The RegisterRequest object containing username, email, and password for registration.
+     * @return A ResponseEntity containing a success message if registration is successful, or an error message
+     *         if username/email already exists or if an exception occurs.
+     */
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest request) {
 
@@ -74,6 +86,19 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse(("User Registered Successfully")));
     }
 
+
+    /**
+     * Authenticates a user based on provided username and password.
+     *
+     * This method verifies the user's credentials by checking if the username exists
+     * in the database and validating the provided password against the stored (encoded) password.
+     * If authentication is successful, it returns a mock JWT response containing user details.
+     * If the username is not found or the password is incorrect, it returns an appropriate error response.
+     *
+     * @param loginRequest The LoginRequest object containing the username and password.
+     * @return A ResponseEntity containing a JwtAuthResponse on successful login,
+     *         or an error message if authentication fails.
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
         User user;

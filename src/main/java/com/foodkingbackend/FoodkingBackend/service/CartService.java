@@ -30,6 +30,25 @@ public class CartService {
     CartItemRepository cartItemRepository;
 
 
+    /**
+     * Adds a specified quantity of a food item to the user's cart.
+     *
+     * This method performs the following steps:
+     * - Validates that the user and the food item exist in the database.
+     * - Checks if the user already has a cart; if not, a new cart is created.
+     * - If the item already exists in the cart, its quantity is updated to the provided value.
+     * - If the item does not exist in the cart, it is added as a new CartItem.
+     * - Recalculates the total amount in the cart based on all items and their quantities.
+     * - Saves and returns the updated cart.
+     *
+     * The method is transactional to ensure atomicity of operations involving multiple entities.
+     *
+     * @param userId     The ID of the user adding the item to the cart.
+     * @param foodItemId The ID of the food item being added.
+     * @param qty        The quantity of the food item to add or update in the cart.
+     * @return The updated Cart object after the item has been added or updated.
+     * @throws RuntimeException if the user or food item is not found, or any other error occurs during the process.
+     */
     @Transactional
     public Cart addToCart(Long userId, Long foodItemId, int qty) {
         try {
@@ -57,22 +76,14 @@ public class CartService {
             if (existingItem.isPresent()) {
     //            update quantity
                 existingItem.get().setQuantity(qty);
-    //            foodItem.setQuantity(qty);
-    //            existingItem.get().getFoodItem().setQuantity(foodItem.getQuantity() + qty);
             } else {
     //          add new item to cart
                 CartItem newItem = new CartItem();
                 newItem.setCart(cart);
                 newItem.setFoodItem(foodItem);
-    //            foodItem.setQuantity(foodItem.getQuantity() + qty); // I was changing the original item's qty
                 newItem.setQuantity(qty);
                 cart.getItems().add(newItem);
             }
-//        update the total
-//        double total = cart.getItems().stream()
-//                .mapToDouble(item -> item.getFoodItem().getPrice() * item.getFoodItem().getQuantity())
-//                .sum();
-//        cart.setTotalAmount(total);
 
             double total = cart.getItems().stream()
                     .mapToDouble(item -> item.getFoodItem().getPrice() * item.getQuantity())
@@ -85,21 +96,45 @@ public class CartService {
         }
     }
 
+    /**
+     * Retrieves the cart associated with the given user ID.
+     *
+     * This method fetches the cart for the specified user from the repository.
+     * If no cart exists for the user, a RuntimeException is thrown.
+     *
+     * @param userId The ID of the user whose cart is to be retrieved.
+     * @return The Cart object associated with the user.
+     * @throws RuntimeException if no cart is found for the user.
+     */
     public Cart getCartForUser(Long userId) {
         return cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Cart not found for user"));
     }
 
+
+    /**
+     * Removes a specific food item from a user's cart and updates the cart total.
+     *
+     * This method:
+     * - Retrieves the user's cart.
+     * - Removes the item with the specified item ID from the cart.
+     * - Recalculates the total cart amount based on remaining items.
+     * - Saves the updated cart back to the repository.
+     *
+     * If the cart does not exist, a RuntimeException is thrown.
+     *
+     * @param userId The ID of the user whose cart is being modified.
+     * @param itemId The ID of the food item to remove from the cart.
+     * @throws RuntimeException if the user's cart is not found.
+     */
     public void removeFromUserCart(Long userId, Long itemId) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
-//        before removing that item, change the cartItem qty;
-//        cart.getItems().removeIf(item -> item.getId().equals(itemId));
         cart.getItems().removeIf(item -> item.getFoodItem().getId().equals(itemId));
 
 
-        //        update the total
+        // update the total
         double total = cart.getItems().stream()
                 .mapToDouble(item -> item.getFoodItem().getPrice() * item.getFoodItem().getQuantity())
                 .sum();
