@@ -17,18 +17,22 @@ public class CartController {
 
     /**
      * Adds a specified quantity of a food item to the user's cart.
-     *
+     * <p>
      * This method delegates to the CartService to add the given food item to the cart
      * associated with the specified user. If the user does not have an existing cart,
      * one may be created. The updated cart is then returned in the response.
      *
-     * @param userId      The ID of the user who is adding the item to their cart.
-     * @param foodItemId  The ID of the food item to be added.
-     * @param qty         The quantity of the food item to add.
+     * @param userId     The ID of the user who is adding the item to their cart.
+     * @param foodItemId The ID of the food item to be added.
+     * @param qty        The quantity of the food item to add.
      * @return A ResponseEntity containing the updated Cart object.
      */
     @PostMapping("/{userId}/add/{foodItemId}/{qty}")
-    public ResponseEntity<Cart> addToCart(@PathVariable Long userId, @PathVariable Long foodItemId, @PathVariable int qty) {
+    public ResponseEntity<Cart> addToCart(
+            @PathVariable("userId") Long userId,
+            @PathVariable("foodItemId") Long foodItemId,
+            @PathVariable("qty") int qty) {
+
         Cart cart = cartService.addToCart(userId, foodItemId, qty);
         return ResponseEntity.ok(cart);
     }
@@ -36,7 +40,7 @@ public class CartController {
 
     /**
      * Retrieves the cart associated with a specific user.
-     *
+     * <p>
      * This method fetches the current cart for the given user ID by delegating to the CartService.
      * If the user has no cart or the cart is empty, the returned Cart object will reflect that.
      *
@@ -44,14 +48,14 @@ public class CartController {
      * @return A ResponseEntity containing the user's Cart object.
      */
     @GetMapping("/{userId}")
-    public ResponseEntity<Cart> getCart(@PathVariable Long userId) {
+    public ResponseEntity<Cart> getCart(@PathVariable("userId") Long userId) {
         return ResponseEntity.ok(cartService.getCartForUser(userId));
     }
 
 
     /**
      * Removes a specific item from a user's cart.
-     *
+     * <p>
      * This method removes the food item with the given item ID from the cart of the specified user.
      * If the item does not exist in the cart or if the user/cart is invalid, the service layer is expected
      * to handle and throw appropriate exceptions.
@@ -61,7 +65,7 @@ public class CartController {
      * @return A ResponseEntity with a success message upon successful removal.
      */
     @DeleteMapping("/user/{userId}/item/{itemId}")
-    public ResponseEntity<?> removeFromUserCart(@PathVariable Long userId, @PathVariable Long itemId) {
+    public ResponseEntity<?> removeFromUserCart(@PathVariable("userId") Long userId, @PathVariable("itemId") Long itemId) {
         cartService.removeFromUserCart(userId, itemId);
         return ResponseEntity.ok("Item removed from cart");
     }

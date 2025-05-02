@@ -39,7 +39,7 @@ public class FoodItemController {
     }
 
     @GetMapping("/id/{id}")
-    public FoodItem getFoodItemById(@PathVariable Long id) {
+    public FoodItem getFoodItemById(@PathVariable("id") Long id) {
         return foodItemService.getFoodItemById(id);
     }
 
